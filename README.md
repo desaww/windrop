@@ -9,25 +9,6 @@ Konto, kein Adminrecht auf der Windows-Seite. Dort läuft nur ein Browser-Tab.
 
 ---
 
-## Die Idee
-
-Zwischen Mac und Windows fehlt AirDrop. Die üblichen Lösungen (LocalSend,
-Warpinator, Syncthing) verlangen Software auf beiden Geräten. Wenn man auf dem
-Windows-Rechner nichts installieren darf oder will, bleiben genau vier Wege –
-und nur einer davon kommt ohne Klickarbeit bei jeder Übertragung aus:
-
-| Weg | Aufwand pro Datei | Urteil |
-| --- | --- | --- |
-| **Browser-Seite bleibt offen, Mac schiebt die Datei hinein** | **keiner** | **gewählt** |
-| Bluetooth OBEX | Empfangsassistent jedes Mal starten, unter 1 MB/s | Notnagel |
-| SMB-Freigabe vom Mac | Explorer-Pfad öffnen | zu umständlich |
-| Windows "Nahe Freigabe" / Quick Share | spricht nicht mit macOS | fällt aus |
-
-Der Kniff: Ein offener Browser-Tab kann über eine WebSocket-Verbindung
-(dauerhafte Zweiwege-Verbindung, im Gegensatz zum normalen Frage-Antwort-Web)
-jederzeit vom Mac angesprochen werden. Der Browser lädt die Datei dann selbst
-herunter – und Edge speichert Downloads ohne Rückfrage im Ordner `Downloads`.
-
 ## Aufbau
 
 ```txt
@@ -147,7 +128,7 @@ denselben Zugangscode und dient als Rückfallebene.
 
 Dieses Projekt ist **mit Hilfe von künstlicher Intelligenz entstanden**.
 Konzept, Architekturentscheidungen, Code und diese Dokumentation wurden
-gemeinsam mit einem KI-Assistenten (Notion AI) erarbeitet. Die Entscheidungen
+gemeinsam mit einem KI-Assistenten erarbeitet. Die Entscheidungen
 darüber, was gebaut wird, sowie sämtliche Tests auf echter Hardware – MacBook
 und Windows-11-Laptop – stammen von mir.
 
