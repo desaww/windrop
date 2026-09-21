@@ -3,7 +3,7 @@
 # WinDrop
 
 **AirDrop for the Mac-to-Windows gap.**
-Send a file from your Mac to a Windows 11 laptop in one click — with nothing
+Send a file from your Mac to a Windows 11 Device in one click — with nothing
 installed on the Windows side.
 
 </div>
@@ -97,7 +97,7 @@ Pull requests are welcome, and so are forks that go their own way. See
 This project was built with the help of AI. The concept, the architecture
 decisions, the code and this documentation were worked out together with an AI
 assistant. What to build, and every test on real hardware — a MacBook and a
-Windows 11 laptop — came from me.
+Windows 11 PC — came from me.
 
 ## License
 
