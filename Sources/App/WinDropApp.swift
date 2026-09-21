@@ -9,8 +9,10 @@ struct WinDropApp: App {
         MenuBarExtra {
             MenuView().environmentObject(state)
         } label: {
-            Image(systemName: state.receiverNames.isEmpty
-                  ? "paperplane" : "paperplane.fill")
+            // Always filled: the outline version looks washed out next to the
+            // other menu bar icons. Connection state is shown by the dot
+            // inside the menu, not by the icon.
+            Image(systemName: "paperplane.fill")
         }
         .menuBarExtraStyle(.window)
 
