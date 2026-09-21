@@ -1,0 +1,63 @@
+# Projektbeschreibung fuer XcodeGen.
+# Erzeugt WinDrop.xcodeproj mit zwei Zielen: der Menueleisten-App und der
+# Teilen-Erweiterung.
+#
+#   brew install xcodegen
+#   xcodegen generate
+#   open WinDrop.xcodeproj
+
+name: WinDrop
+
+options:
+  bundleIdPrefix: de.lennard
+  developmentLanguage: de
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "13.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+
+  WinDrop:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/Kern
+      - path: Sources/App
+    settings:
+      base:
+        PRODUCT_NAME: WinDrop
+        PRODUCT_BUNDLE_IDENTIFIER: de.lennard.windrop
+        GENERATE_INFOPLIST_FILE: YES
+        # Kein Dock-Symbol, die App lebt in der Menueleiste
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_CFBundleDisplayName: WinDrop
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        MARKETING_VERSION: "0.4"
+        CURRENT_PROJECT_VERSION: "1"
+    dependencies:
+      - target: WinDropTeilen
+        embed: true
+        codeSign: true
+
+  WinDropTeilen:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Sources/Teilen
+    settings:
+      base:
+        PRODUCT_NAME: WinDropTeilen
+        PRODUCT_BUNDLE_IDENTIFIER: de.lennard.windrop.teilen
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/Teilen/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/Teilen/Teilen.entitlements
+        MARKETING_VERSION: "0.4"
+        CURRENT_PROJECT_VERSION: "1"
