@@ -1,137 +1,104 @@
+<div align="center">
+
 # WinDrop
 
-AirDrop-Brücke von macOS zu Windows 11 – **ohne dass auf dem Windows-Rechner
-irgendetwas installiert wird**.
+**AirDrop for the Mac-to-Windows gap.**
+Send a file from your Mac to a Windows 11 laptop in one click — with nothing
+installed on the Windows side.
 
-Eine Datei auf dem Mac auswählen, Teilen → WinDrop, fertig: Am Windows-Laptop
-liegt sie ein paar Sekunden später im Ordner `Downloads`. Kein Programm, kein
-Konto, kein Adminrecht auf der Windows-Seite. Dort läuft nur ein Browser-Tab.
+</div>
 
 ---
 
-## Aufbau
+Pick a file on the Mac, choose **Share → WinDrop**, and a few seconds later it
+is sitting in `Downloads` on the Windows machine. No app, no account, no admin
+rights over there. All Windows needs is a browser tab left open.
 
-```txt
-  MacBook (Server)                         Windows 11 (nur Browser)
-  ┌───────────────────────────┐            ┌────────────────────────┐
-  │ Teilen-Menü (Erweiterung) │            │  Tab: http://mac.local │
-  │ Ablagefenster             │            │       :8787/?t=…       │
-  │ Ordner ~/WinDrop/Outbox   │            │                        │
-  │            ↓              │  WebSocket │                        │
-  │      Warteschlange   ─────┼───────────►│  "neue Datei: …"       │
-  │            ↓              │            │            ↓           │
-  │      HTTP-Server     ◄────┼────────────┤  lädt /f/<id>          │
-  │                           │   Download │            ↓           │
-  └───────────────────────────┘            │  Downloads\datei.pdf   │
-                                           └────────────────────────┘
-```
+## What you get
 
-Der Mac ist der Server, Windows der Dauergast. Die Verbindung wird **vom
-Windows-Gerät** aufgebaut und offen gehalten – deshalb braucht Windows keinen
-offenen Port und keine Firewall-Ausnahme. Erreichbar ist der Mac über seinen
-`.local`-Namen; Windows 10 und 11 lösen den ohne Zusatzsoftware auf. Die
-IP-Adresse bleibt als Rückfallebene.
+- **Native share menu.** WinDrop appears in Finder's share menu, like AirDrop does.
+- **Drop window.** A small floating window that takes files and folders by drag and drop.
+- **Watched folder.** Anything you move into `~/WinDrop/Outbox` is sent automatically.
+- **Nothing to install on Windows.** One pinned browser tab, set up once.
+- **Several files at once.** They are bundled into a single ZIP, so the browser never asks twice.
+- **Folders too.** Packed automatically.
+- **Survives sleep.** The tab reconnects by itself, the Mac restarts its server after waking or switching networks.
+- **Progress, history and retries.** Live progress on both sides, the last 100 transfers on record, one click to try again.
+- **Quiet by default.** Menu bar only, no dock icon, optional notifications.
 
-## Was drin ist
+## Requirements
 
-- **Menüleisten-App für macOS** (SwiftUI), kein Dock-Symbol
-- **Teilen-Erweiterung**, also der native Weg über Finder → Teilen
-- **Ablagefenster** zum Ziehen und Ablegen, schwebt über anderen Fenstern
-- **Überwachter Ordner** `~/WinDrop/Outbox`: Was dort landet, geht raus
-- **Eigener HTTP- und WebSocket-Server** (Network.framework), RFC 6455 von Hand
-  umgesetzt, ohne Fremdbibliothek; Server-Sent Events als Rückfallebene
-- **Warteschlange** mit bis zu drei Versuchen, serverseitig gezähltem
-  Fortschritt und Nachlieferung, wenn der Tab zwischendurch zu war
-- **Mehrere Dateien und Ordner** werden zu einem ZIP-Archiv gebündelt
-- **Wiederverbindung nach Standby**: Die Seite prüft die Leitung selbst, der
-  Mac startet den Server nach dem Aufwachen und bei Netzwechsel neu
-- **Verlauf** der letzten 100 Übertragungen und **Einstellungen** mit Autostart,
-  Mitteilungen und Zugangscode-Verwaltung
+- macOS 13 or newer, Xcode, [Homebrew](https://brew.sh)
+- A Windows PC with any modern browser (tested with Microsoft Edge)
+- Both machines on the same Wi-Fi
 
-## Installation (Mac)
-
-Voraussetzungen: macOS 13 oder neuer, Xcode, [Homebrew](https://brew.sh).
+## Install
 
 ```bash
-brew install xcodegen      # erzeugt die Xcode-Projektdatei aus project.yml
-cd swift
+git clone https://github.com/desaww/windrop.git
+cd windrop
+brew install xcodegen
 xcodegen generate
 open WinDrop.xcodeproj
 ```
 
-In Xcode für **beide** Ziele (`WinDrop` und `WinDropTeilen`) unter *Signing &
-Capabilities* das eigene Team wählen – ohne Apple-Konto reicht *Sign to Run
-Locally*. Ohne Signatur lädt macOS die Teilen-Erweiterung nicht.
+In Xcode, pick your team under *Signing & Capabilities* for **both** targets
+(`WinDrop` and `WinDropShare`) — without a signature macOS refuses to load the
+share extension. No Apple account? *Sign to Run Locally* is enough.
 
-Danach die gebaute App nach `/Applications` verschieben und einmal starten.
-Erst dann kennt das System die Erweiterung. Falls sie im Teilen-Menü fehlt:
-*Systemeinstellungen → Datenschutz & Sicherheit → Erweiterungen → Teilen*.
+Build, then move the app to `/Applications` and launch it once. macOS only
+looks for extensions inside installed apps. If WinDrop is missing from the
+share menu, enable it under *System Settings → Privacy & Security → Extensions
+→ Sharing*.
 
-Ausführlicher steht das in [swift/README.md](swift/README.md).
+## Set up Windows (once)
 
-## Einrichtung (Windows, einmalig)
+1. Open the address shown in the menu bar window, for example
+   `http://macbook.local:8787/?t=<token>`
+2. Right-click the tab → **Pin tab**
+3. That's it. Leave it open and forget about it.
 
-1. Die Adresse aus dem Menüleisten-Fenster in Microsoft Edge öffnen, etwa
-   `http://macbook.local:8787/?t=<Zugangscode>`
-2. Rechtsklick auf den Tab → *Registerkarte anheften*
-3. Fertig. Der Tab bleibt liegen, alles Weitere passiert von allein.
+## Sending
 
-## Benutzung
-
-| Weg | Wie |
+| Way | How |
 | --- | --- |
-| Teilen-Menü | Datei im Finder auswählen → Teilen → WinDrop |
-| Ablagefenster | Dateien oder Ordner hineinziehen |
-| Dateiauswahl | Menüleiste → *Dateien wählen …* |
-| Ordner | Alles in `~/WinDrop/Outbox` legen |
+| Share menu | Select a file in Finder → Share → WinDrop |
+| Drop window | Drag files or folders into it |
+| File picker | Menu bar → *Choose files …* |
+| Watched folder | Move anything into `~/WinDrop/Outbox` |
 
-## Sicherheit
+## Security
 
-Der Mac öffnet einen Port im lokalen Netz. Dagegen steht:
+Every address carries a long random token. Without it the server answers 403
+and hands out neither the page nor a file. The token lives only on your Mac in
+`~/WinDrop/token.txt` and can be regenerated at any time. Uploads from the
+share extension are accepted from `127.0.0.1` only.
 
-- Jede Adresse enthält einen langen Zufalls-Zugangscode; ohne ihn antwortet der
-  Server mit 403, weder Seite noch Datei
-- Der Code liegt nur lokal in `~/WinDrop/token.txt` (Rechte 600) und lässt sich
-  jederzeit neu erzeugen
-- Vergleich des Codes läuft laufzeitkonstant, verrät also nichts über die Antwortzeit
-- Der Upload-Weg der Teilen-Erweiterung wird nur von `127.0.0.1` angenommen
+Transfers run over plain HTTP. Inside your own Wi-Fi that is a reasonable
+trade — HTTPS would need a certificate Windows trusts, and installing one is
+exactly what this project avoids. Don't use WinDrop on a public network.
 
-Die Übertragung läuft unverschlüsselt über HTTP. Im eigenen WLAN ist das
-vertretbar; HTTPS bräuchte ein Zertifikat, dem Windows vertraut – und dessen
-Installation ist genau das, was hier vermieden werden soll. Für ein fremdes
-oder öffentliches Netz ist das Werkzeug nicht gedacht.
+## Make it yours
 
-## Grenzen
+WinDrop is meant to be forked, modified and extended. Everything is plain
+Swift with no third-party dependencies, and the whole server is about a
+thousand readable lines. Ideas that are wide open:
 
-- Beide Geräte müssen im selben WLAN sein; Netze mit Client-Isolation
-  (Gastnetze) blockieren die Verbindung
-- Rückrichtung Windows → Mac ist noch nicht eingebaut
-- Ordner lassen sich nicht über das Teilen-Menü senden, nur über das
-  Ablagefenster – eine Teilen-Erweiterung darf in ihrer Abschottung nicht packen
-- Der Port 8787 steht fest im Code (an zwei Stellen), weil die Erweiterung die
-  Einstellungen der App nicht lesen kann
+- Windows → Mac, the receiving page already has a place for an upload field
+- iPhone and iPad senders, the server side stays exactly the same
+- Text and clipboard items as their own message type
+- HTTPS with a locally trusted certificate for people who can install one
 
-## Python-Fassung
+Pull requests are welcome, and so are forks that go their own way. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for a short tour of the code.
 
-Unter [`python/`](python/) liegt die Vorstufe: eine einzelne Datei, nur
-Standardbibliothek, ohne Xcode lauffähig.
+## Built with AI
 
-```bash
-python3 python/windrop.py serve
-python3 python/windrop.py send ~/Desktop/bericht.pdf
-```
+This project was built with the help of AI. The concept, the architecture
+decisions, the code and this documentation were worked out together with an AI
+assistant. What to build, and every test on real hardware — a MacBook and a
+Windows 11 laptop — came from me.
 
-Sie kann alles bis auf das native Teilen-Menü, benutzt dieselben Ordner und
-denselben Zugangscode und dient als Rückfallebene.
+## License
 
-## Entstehung
-
-Dieses Projekt ist **mit Hilfe von künstlicher Intelligenz entstanden**.
-Konzept, Architekturentscheidungen, Code und diese Dokumentation wurden
-gemeinsam mit einem KI-Assistenten erarbeitet. Die Entscheidungen
-darüber, was gebaut wird, sowie sämtliche Tests auf echter Hardware – MacBook
-und Windows-11-Laptop – stammen von mir.
-
-## Lizenz
-
-MIT, siehe [LICENSE](LICENSE).
+MIT. Do what you like with it.

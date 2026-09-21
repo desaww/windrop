@@ -1,0 +1,63 @@
+# Project description for XcodeGen.
+# Creates WinDrop.xcodeproj with two targets: the menu bar app and the share
+# extension.
+#
+#   brew install xcodegen
+#   xcodegen generate
+#   open WinDrop.xcodeproj
+
+name: WinDrop
+
+options:
+  bundleIdPrefix: de.lennard
+  developmentLanguage: en
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "13.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+
+  WinDrop:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/Core
+      - path: Sources/App
+    settings:
+      base:
+        PRODUCT_NAME: WinDrop
+        PRODUCT_BUNDLE_IDENTIFIER: de.lennard.windrop
+        GENERATE_INFOPLIST_FILE: YES
+        # No dock icon, the app lives in the menu bar
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_CFBundleDisplayName: WinDrop
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        MARKETING_VERSION: "0.5"
+        CURRENT_PROJECT_VERSION: "1"
+    dependencies:
+      - target: WinDropShare
+        embed: true
+        codeSign: true
+
+  WinDropShare:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Sources/ShareExtension
+    settings:
+      base:
+        PRODUCT_NAME: WinDropShare
+        PRODUCT_BUNDLE_IDENTIFIER: de.lennard.windrop.share
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Sources/ShareExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/ShareExtension/ShareExtension.entitlements
+        MARKETING_VERSION: "0.5"
+        CURRENT_PROJECT_VERSION: "1"
