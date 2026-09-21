@@ -11,6 +11,12 @@ final class AppSettings: ObservableObject {
 
     private let store: UserDefaults
 
+    /// Interface language. Changing it redraws the app right away; the
+    /// receiving page follows on the next reload of the Windows tab.
+    @Published var language: AppLanguage {
+        didSet { store.set(language.rawValue, forKey: AppLanguage.defaultsKey) }
+    }
+
     @Published var bundleAsZip: Bool {
         didSet { store.set(bundleAsZip, forKey: "bundleAsZip") }
     }
@@ -37,9 +43,11 @@ final class AppSettings: ObservableObject {
                 }
                 launchAtLoginError = nil
             } catch {
-                launchAtLoginError = "Could not change the login item: "
+                launchAtLoginError = tr("Could not change the login item: ",
+                                        "Der Anmeldeeintrag ließ sich nicht ändern: ")
                     + error.localizedDescription
-                    + " The app has to live in /Applications for this to work."
+                    + tr(" The app has to live in /Applications for this to work.",
+                         " Dafür muss die App in /Applications liegen.")
             }
         }
     }
@@ -47,11 +55,13 @@ final class AppSettings: ObservableObject {
     private init() {
         let defaults = UserDefaults.standard
         defaults.register(defaults: [
+            AppLanguage.defaultsKey: AppLanguage.english.rawValue,
             "bundleAsZip": true,
             "notifyOnFailure": true,
             "notifyOnSuccess": false,
         ])
         store = defaults
+        language = AppLanguage.current
         bundleAsZip = defaults.bool(forKey: "bundleAsZip")
         notifyOnFailure = defaults.bool(forKey: "notifyOnFailure")
         notifyOnSuccess = defaults.bool(forKey: "notifyOnSuccess")

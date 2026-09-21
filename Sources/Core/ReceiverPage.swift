@@ -3,9 +3,55 @@ import Foundation
 /// The page the Windows machine keeps open in its browser. It is served by
 /// the Mac itself, so it has to work without any network access of its own.
 enum ReceiverPage {
-    static let html = #"""
+
+    /// The page is built fresh for every request, so a change of language
+    /// takes effect as soon as the Windows tab is reloaded.
+    static func html(for language: AppLanguage = .current) -> String {
+        let german = language == .german
+        func t(_ english: String, _ germanText: String) -> String {
+            german ? germanText : english
+        }
+
+        // Texts the script needs at runtime, handed over as one JSON object.
+        let texts: [String: String] = [
+            "connecting": t("Connecting…", "Verbindung wird aufgebaut…"),
+            "connected": t("Connected", "Verbunden"),
+            "connectedTo": t("Connected to ", "Verbunden mit "),
+            "connectedFallback": t("Connected (fallback)", "Verbunden (Rückfallebene)"),
+            "lost": t("Connection lost – retrying…", "Verbindung verloren – neuer Versuch…"),
+            "fallback": t("WebSocket unavailable – using the fallback",
+                          "WebSocket nicht verfügbar – Rückfallebene läuft"),
+            "transferring": t("transferring", "überträgt"),
+            "failed": t("failed", "fehlgeschlagen"),
+        ]
+
+        return template
+            .replacingOccurrences(of: "__LANG__", with: language.rawValue)
+            .replacingOccurrences(of: "__TEXTS__", with: JSONHelper.text(texts) ?? "{}")
+            .replacingOccurrences(of: "__SUBTITLE__",
+                                  with: t("Receiving page &ndash; keep this tab open.",
+                                          "Empfangsseite &ndash; diesen Tab offen lassen."))
+            .replacingOccurrences(of: "__EMPTY__",
+                                  with: t("Nothing received yet.", "Noch nichts empfangen."))
+            .replacingOccurrences(of: "__HINT_ASK__",
+                                  with: t("If the browser asks about",
+                                          "Falls der Browser nach"))
+            .replacingOccurrences(of: "__HINT_MULTI__",
+                                  with: t("Download multiple files",
+                                          "Mehrere Dateien herunterladen"))
+            .replacingOccurrences(of: "__HINT_ALLOW__",
+                                  with: t("choose <b>Allow</b> once. It will not ask again.",
+                                          "fragt: einmal <b>Zulassen</b> wählen, dann ist Ruhe."))
+            .replacingOccurrences(of: "__HINT_PIN__",
+                                  with: t("Pin the tab: right-click the tab",
+                                          "Tab anheften: Rechtsklick auf den Tab"))
+            .replacingOccurrences(of: "__HINT_PIN_ITEM__",
+                                  with: t("Pin tab", "Tab anheften"))
+    }
+
+    private static let template = #"""
 <!doctype html>
-<html lang="en">
+<html lang="__LANG__">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -47,24 +93,25 @@ enum ReceiverPage {
 <body>
 <main>
   <h1>WinDrop</h1>
-  <div class="muted">Receiving page &ndash; keep this tab open.</div>
+  <div class="muted">__SUBTITLE__</div>
 
   <div class="card">
-    <div class="status"><span id="dot" class="dot"></span><span id="txt">Connecting&hellip;</span></div>
+    <div class="status"><span id="dot" class="dot"></span><span id="txt"></span></div>
   </div>
 
   <div id="list"></div>
-  <div id="empty">Nothing received yet.</div>
+  <div id="empty">__EMPTY__</div>
 
   <div class="hint muted">
-    If the browser asks about <em>&ldquo;Download multiple files&rdquo;</em>:
-    choose <b>Allow</b> once. It will not ask again.<br><br>
-    Pin the tab: right-click the tab &rarr; <code>Pin tab</code>.
+    __HINT_ASK__ <em>&ldquo;__HINT_MULTI__&rdquo;</em>
+    __HINT_ALLOW__<br><br>
+    __HINT_PIN__ &rarr; <code>__HINT_PIN_ITEM__</code>.
   </div>
 </main>
 
 <script>
 const TOKEN = "__TOKEN__";
+const T = __TEXTS__;
 const dot = document.getElementById("dot");
 const txt = document.getElementById("txt");
 const list = document.getElementById("list");
@@ -90,7 +137,7 @@ function row(msg) {
   el.innerHTML = '<div class="head"><span class="n"></span><span class="s"></span></div>' +
                  '<div class="bar"><i></i></div>';
   el.querySelector(".n").textContent = msg.name;
-  el.querySelector(".s").textContent = "transferring";
+  el.querySelector(".s").textContent = T.transferring;
   list.prepend(el);
   empty.style.display = "none";
   rows[msg.id] = { el, name: msg.name, size: msg.size };
@@ -125,12 +172,12 @@ function done(msg) {
 function failed(msg) {
   const r = rows[msg.id]; if (!r) return;
   r.el.classList.add("failed");
-  r.el.querySelector(".s").textContent = msg.reason || "failed";
+  r.el.querySelector(".s").textContent = msg.reason || T.failed;
 }
 
 function handle(msg) {
   if (msg.type === "welcome") {
-    setStatus("on", "Connected to " + msg.device);
+    setStatus("on", T.connectedTo + msg.device);
   } else if (msg.type === "file") {
     startDownload(msg);
   } else if (msg.type === "progress") {
@@ -159,14 +206,14 @@ function connectWS() {
   const scheme = location.protocol === "https:" ? "wss:" : "ws:";
   const socket = new WebSocket(scheme + "//" + location.host + "/ws?t=" + encodeURIComponent(TOKEN));
   ws = socket;
-  socket.onopen = () => { wsFailures = 0; backoff = 500; setStatus("on", "Connected"); };
+  socket.onopen = () => { wsFailures = 0; backoff = 500; setStatus("on", T.connected); };
   socket.onmessage = (e) => handle(JSON.parse(e.data));
   socket.onclose = () => {
     // Only react if this is still the current connection, otherwise
     // several lines pile up after a retry.
     if (ws !== socket) return;
     ws = null;
-    setStatus("off", "Connection lost \u2013 retrying\u2026");
+    setStatus("off", T.lost);
     wsFailures++;
     if (wsFailures >= 3) { connectSSE(); return; }
     scheduleWS(backoff);
@@ -177,14 +224,14 @@ function connectWS() {
 
 function connectSSE() {
   if (es) return;
-  setStatus("wait", "WebSocket unavailable \u2013 using the fallback");
+  setStatus("wait", T.fallback);
   const stream = new EventSource("/events?t=" + encodeURIComponent(TOKEN));
   es = stream;
-  stream.onopen = () => { if (es === stream) setStatus("on", "Connected (fallback)"); };
+  stream.onopen = () => { if (es === stream) setStatus("on", T.connectedFallback); };
   stream.onmessage = (e) => handle(JSON.parse(e.data));
   stream.onerror = () => {
     if (es !== stream) return;
-    setStatus("off", "Connection lost \u2013 retrying\u2026");
+    setStatus("off", T.lost);
   };
 }
 
@@ -211,6 +258,7 @@ document.addEventListener("visibilitychange", function () {
 });
 setInterval(function () { checkConnection(false); }, 15000);
 
+setStatus("", T.connecting);
 connectWS();
 </script>
 </body>

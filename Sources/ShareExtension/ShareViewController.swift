@@ -6,8 +6,10 @@ import UniformTypeIdentifiers
 /// That is all it does - the logic lives in the server.
 class ShareViewController: NSViewController {
 
-    private let titleLabel = NSTextField(labelWithString: "Send to Windows")
-    private let status = NSTextField(labelWithString: "Preparing …")
+    private let titleLabel = NSTextField(labelWithString: tr("Send to Windows",
+                                                            "An Windows senden"))
+    private let status = NSTextField(labelWithString: tr("Preparing …",
+                                                         "Wird vorbereitet …"))
     private let spinner = NSProgressIndicator()
 
     private var open = 0
@@ -39,6 +41,7 @@ class ShareViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
+        ShareLanguage.refreshFromApp()
         process()
     }
 
@@ -46,7 +49,7 @@ class ShareViewController: NSViewController {
 
     private func process() {
         guard let items = extensionContext?.inputItems as? [NSExtensionItem] else {
-            finish(text: "Nothing to send.")
+            finish(text: tr("Nothing to send.", "Nichts zu senden."))
             return
         }
 
@@ -55,19 +58,21 @@ class ShareViewController: NSViewController {
             providers.append(contentsOf: item.attachments ?? [])
         }
         guard !providers.isEmpty else {
-            finish(text: "Nothing to send.")
+            finish(text: tr("Nothing to send.", "Nichts zu senden."))
             return
         }
 
         open = providers.count
         status.stringValue = providers.count == 1
-            ? "Sending the file …"
-            : "Sending \(providers.count) files …"
+            ? tr("Sending the file …", "Datei wird gesendet …")
+            : "\(providers.count) " + tr("files are being sent …",
+                                         "Dateien werden gesendet …")
 
         let type = UTType.fileURL.identifier
         for provider in providers {
             guard provider.hasItemConformingToTypeIdentifier(type) else {
-                finishOne(error: "Not available as a file")
+                finishOne(error: tr("Not available as a file",
+                                    "Liegt nicht als Datei vor"))
                 continue
             }
             provider.loadItem(forTypeIdentifier: type) { [weak self] item, _ in
@@ -79,7 +84,7 @@ class ShareViewController: NSViewController {
                     url = direct
                 }
                 guard let url else {
-                    self.finishOne(error: "Path not readable")
+                    self.finishOne(error: tr("Path not readable", "Pfad nicht lesbar"))
                     return
                 }
                 self.upload(url)
@@ -94,8 +99,9 @@ class ShareViewController: NSViewController {
         let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isFolder)
         guard exists, !isFolder.boolValue else {
             finishOne(error: isFolder.boolValue
-                      ? "Drag folders into the drop window instead"
-                      : "File not found")
+                      ? tr("Drag folders into the drop window instead",
+                           "Ordner bitte ins Ablagefenster ziehen")
+                      : tr("File not found", "Datei nicht gefunden"))
             return
         }
 
@@ -104,7 +110,7 @@ class ShareViewController: NSViewController {
             withAllowedCharacters: .alphanumerics.union(CharacterSet(charactersIn: ".-_"))) ?? "file"
 
         guard let target = URL(string: "http://127.0.0.1:\(WinDropPort.number)/api/upload?name=\(encoded)") else {
-            finishOne(error: "Invalid address")
+            finishOne(error: tr("Invalid address", "Ungültige Adresse"))
             return
         }
 
@@ -118,13 +124,14 @@ class ShareViewController: NSViewController {
             guard let self else { return }
             if let error {
                 let text = (error as NSError).code == NSURLErrorCannotConnectToHost
-                    ? "WinDrop is not running"
+                    ? tr("WinDrop is not running", "WinDrop läuft nicht")
                     : error.localizedDescription
                 self.finishOne(error: text)
                 return
             }
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                self.finishOne(error: "Server answered \(http.statusCode)")
+                self.finishOne(error: tr("Server answered ", "Server antwortete mit ")
+                               + "\(http.statusCode)")
                 return
             }
             self.finishOne(error: nil)
@@ -144,14 +151,16 @@ class ShareViewController: NSViewController {
 
             if self.failures.isEmpty {
                 self.finish(text: self.succeeded == 1
-                            ? "Sent."
-                            : "\(self.succeeded) files sent.")
+                            ? tr("Sent.", "Gesendet.")
+                            : "\(self.succeeded) " + tr("files sent.", "Dateien gesendet."))
             } else if self.succeeded == 0 {
                 self.finish(text: self.failures[0]
-                            + ". Is WinDrop running in the menu bar?", delay: 3.0)
+                            + tr(". Is WinDrop running in the menu bar?",
+                                 ". Läuft WinDrop in der Menüleiste?"), delay: 3.0)
             } else {
-                self.finish(text: "\(self.succeeded) sent, "
-                            + "\(self.failures.count) failed.", delay: 3.0)
+                self.finish(text: "\(self.succeeded) " + tr("sent, ", "gesendet, ")
+                            + "\(self.failures.count) "
+                            + tr("failed.", "fehlgeschlagen."), delay: 3.0)
             }
         }
     }
@@ -170,4 +179,36 @@ class ShareViewController: NSViewController {
 /// If it is changed, it has to be changed in both places.
 enum WinDropPort {
     static let number = 8787
+}
+
+/// Which language this window speaks.
+///
+/// A share extension runs in its own sandbox and cannot read the settings of
+/// the app, so the choice is remembered here and refreshed from the running
+/// app after every use. Consequence: right after the language is switched,
+/// the share window shows the previous language once.
+enum ShareLanguage {
+    private static let key = "windropLanguage"
+
+    /// Taken once per run, so a refresh arriving mid-flight cannot leave
+    /// half of this window in the other language.
+    static let current: String = UserDefaults.standard.string(forKey: key) ?? "en"
+
+    static func refreshFromApp() {
+        guard let url = URL(string: "http://127.0.0.1:\(WinDropPort.number)/api/info") else {
+            return
+        }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 2
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            guard let data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let language = json["language"] as? String else { return }
+            UserDefaults.standard.set(language, forKey: key)
+        }.resume()
+    }
+}
+
+func tr(_ english: String, _ german: String) -> String {
+    ShareLanguage.current == "de" ? german : english
 }

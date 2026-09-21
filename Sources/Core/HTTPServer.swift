@@ -278,7 +278,7 @@ final class Session {
                 respond(403, text: "WinDrop: missing or invalid access token.")
                 return
             }
-            let page = ReceiverPage.html
+            let page = ReceiverPage.html()
                 .replacingOccurrences(of: "__TOKEN__", with: AccessToken.current)
             respond(200, text: page, type: "text/html; charset=utf-8")
 
@@ -303,6 +303,14 @@ final class Session {
                 },
             ]
             respond(200, text: JSONHelper.text(payload) ?? "{}",
+                    type: "application/json; charset=utf-8")
+
+        case ("GET", "/api/info"):
+            // This machine only. The share extension asks here which
+            // language to use, because it cannot read the app's settings.
+            guard isLocal else { respond(403, text: "forbidden"); return }
+            respond(200,
+                    text: JSONHelper.text(["language": AppLanguage.current.rawValue]) ?? "{}",
                     type: "application/json; charset=utf-8")
 
         case ("POST", "/api/upload"):

@@ -25,6 +25,7 @@ Sources/Core/              shared engine, no UI
   WebSocketFrame.swift     RFC 6455 framing, written by hand
   Zipper.swift             bundles several files or a folder into one archive
   OutboxWatcher.swift      watches ~/WinDrop/Outbox
+  Localization.swift       language choice and the tr() helper
   Storage / AccessToken    folders, token handling (Helpers.swift)
   History / AppSettings    persisted state
 Sources/App/               the menu bar app
@@ -48,6 +49,13 @@ Sources/ShareExtension/    the share menu extension
 - **The receiving page has no build step.** It is one HTML string in
   `ReceiverPage.swift` and must keep working on a machine that has nothing
   installed.
+- **Two languages, no string table.** Visible text is written as
+  `tr("English", "Deutsch")` right where it is used, so nothing can drift out
+  of sync with a list of keys. A third language means one more case in
+  `AppLanguage` and one more parameter on `tr` — the compiler then shows you
+  every place that needs work. The receiving page gets its runtime strings as
+  a JSON object, the share extension keeps its own copy because a sandboxed
+  extension cannot read the app's settings.
 - **No third-party dependencies.** Please keep it that way if you can.
 
 ## Style

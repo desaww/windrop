@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct WinDropApp: App {
     @StateObject private var state = AppState()
+    @ObservedObject private var settings = AppSettings.shared
 
     var body: some Scene {
         MenuBarExtra {
@@ -23,12 +24,12 @@ struct WinDropApp: App {
 
         // Both windows may be made larger, but not smaller than their
         // content, otherwise something would be cut off.
-        Window("History", id: "history") {
+        Window(tr("History", "Verlauf"), id: "history") {
             HistoryView().environmentObject(state)
         }
         .windowResizability(.contentMinSize)
 
-        Window("Settings", id: "settings") {
+        Window(tr("Settings", "Einstellungen"), id: "settings") {
             SettingsView().environmentObject(state)
         }
         .windowResizability(.contentMinSize)

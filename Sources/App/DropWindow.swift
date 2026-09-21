@@ -11,6 +11,7 @@ import AppKit
 /// accepts files reliably.
 struct DropWindowView: View {
     @EnvironmentObject var state: AppState
+    @ObservedObject private var settings = AppSettings.shared
     @State private var isTargeted = false
 
     var body: some View {
@@ -29,7 +30,7 @@ struct DropWindowView: View {
             Button {
                 FilePicker.show(state)
             } label: {
-                Text("Choose files …").frame(maxWidth: .infinity)
+                Text(tr("Choose files …", "Dateien wählen …")).frame(maxWidth: .infinity)
             }
 
             if !state.transfers.isEmpty {
@@ -82,7 +83,8 @@ struct DropWindowView: View {
                     Image(systemName: "paperplane")
                         .font(.system(size: 22))
                         .foregroundStyle(.secondary)
-                    Text(isTargeted ? "Release to send" : "Drop files here")
+                    Text(isTargeted ? tr("Release to send", "Loslassen zum Senden")
+                                    : tr("Drop files here", "Dateien hier ablegen"))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -114,8 +116,9 @@ enum FilePicker {
         panel.allowsMultipleSelection = true
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
-        panel.message = "Send files to the Windows laptop"
-        panel.prompt = "Send"
+        panel.message = tr("Send files to the Windows laptop",
+                           "Dateien an den Windows-Laptop senden")
+        panel.prompt = tr("Send", "Senden")
         // Without activating first, the panel stays invisible behind other
         // apps for a menu bar app (LSUIElement).
         NSApplication.shared.activate(ignoringOtherApps: true)

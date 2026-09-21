@@ -3,7 +3,7 @@
 # WinDrop
 
 **AirDrop for the Mac-to-Windows gap.**
-Send a file from your Mac to a Windows 11 Device in one click — with nothing
+Send a file from your Mac to a Windows 11 laptop in one click — with nothing
 installed on the Windows side.
 
 </div>
@@ -24,6 +24,7 @@ rights over there. All Windows needs is a browser tab left open.
 - **Folders too.** Packed automatically.
 - **Survives sleep.** The tab reconnects by itself, the Mac restarts its server after waking or switching networks.
 - **Progress, history and retries.** Live progress on both sides, the last 100 transfers on record, one click to try again.
+- **English or German.** One switch in the settings, and the app, the notifications and the page on Windows follow.
 - **Quiet by default.** Menu bar only, no dock icon, optional notifications.
 
 ## Requirements
@@ -87,6 +88,7 @@ thousand readable lines. Ideas that are wide open:
 - Windows → Mac, the receiving page already has a place for an upload field
 - iPhone and iPad senders, the server side stays exactly the same
 - Text and clipboard items as their own message type
+- More languages: every string sits next to its translation, see `Localization.swift`
 - HTTPS with a locally trusted certificate for people who can install one
 
 Pull requests are welcome, and so are forks that go their own way. See
@@ -97,7 +99,7 @@ Pull requests are welcome, and so are forks that go their own way. See
 This project was built with the help of AI. The concept, the architecture
 decisions, the code and this documentation were worked out together with an AI
 assistant. What to build, and every test on real hardware — a MacBook and a
-Windows 11 PC — came from me.
+Windows 11 laptop — came from me.
 
 ## License
 

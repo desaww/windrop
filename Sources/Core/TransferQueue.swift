@@ -183,7 +183,8 @@ final class TransferQueue {
                 guard Date().timeIntervalSince(t.offeredAt) > Self.offerTimeout else { continue }
                 if t.attempts >= Self.maxAttempts {
                     t.status = .failed
-                    t.reason = "Receiver did not respond"
+                    t.reason = tr("Receiver did not respond",
+                                  "Empfänger antwortet nicht")
                     t.finishedAt = Date()
                     log("Giving up: \(t.name) (no response)")
                     outgoing.append(["type": "error", "id": t.id, "reason": t.reason])

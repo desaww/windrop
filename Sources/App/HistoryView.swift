@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HistoryView: View {
     @EnvironmentObject var state: AppState
+    @ObservedObject private var settings = AppSettings.shared
 
     var body: some View {
         HistoryList(history: state.history)
@@ -15,10 +16,10 @@ private struct HistoryList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("History")
+                Text(tr("History", "Verlauf"))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
-                Button("Clear") { history.clear() }
+                Button(tr("Clear", "Leeren")) { history.clear() }
                     .controlSize(.small)
                     .disabled(history.entries.isEmpty)
             }
@@ -27,7 +28,7 @@ private struct HistoryList: View {
             Divider()
 
             if history.entries.isEmpty {
-                Text("Nothing sent yet.")
+                Text(tr("Nothing sent yet.", "Noch nichts gesendet."))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -67,7 +68,8 @@ private struct HistoryList: View {
 
     private func timestamp(_ date: Date) -> String {
         let f = DateFormatter()
-        f.dateFormat = "MMM d, HH:mm"
+        f.dateFormat = tr("MMM d, HH:mm", "d. MMM, HH:mm")
+        f.locale = Locale(identifier: AppLanguage.current == .german ? "de_DE" : "en_US")
         return f.string(from: date)
     }
 }

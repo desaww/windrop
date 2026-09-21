@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuView: View {
     @EnvironmentObject var state: AppState
+    @ObservedObject private var settings = AppSettings.shared
     @Environment(\.openWindow) private var openWindow
     @State private var showLog = false
 
@@ -41,7 +42,7 @@ struct MenuView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help("Quit WinDrop")
+                .help(tr("Quit WinDrop", "WinDrop beenden"))
             }
             if let error = state.startError {
                 Text(error)
@@ -76,29 +77,33 @@ struct MenuView: View {
             Button {
                 FilePicker.show(state)
             } label: {
-                Label("Choose files …", systemImage: "doc.badge.plus")
+                Label(tr("Choose files …", "Dateien wählen …"),
+                      systemImage: "doc.badge.plus")
                     .frame(maxWidth: .infinity)
             }
 
             Button {
                 showWindow("drop")
             } label: {
-                Label("Open drop window", systemImage: "rectangle.dashed.and.paperclip")
+                Label(tr("Open drop window", "Ablagefenster öffnen"),
+                      systemImage: "rectangle.dashed.and.paperclip")
                     .frame(maxWidth: .infinity)
             }
 
             if state.packing {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.small)
-                    Text("Packing the archive …")
+                    Text(tr("Packing the archive …", "Archiv wird gepackt …"))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
             }
 
             if !state.connected, !state.transfers.isEmpty {
-                Text("No receiver connected. Open the address above in a browser "
-                     + "on the Windows laptop and everything continues by itself.")
+                Text(tr("No receiver connected. Open the address above in a browser "
+                        + "on the Windows laptop and everything continues by itself.",
+                        "Kein Empfänger verbunden. Die Adresse oben im Browser des "
+                        + "Windows-Laptops öffnen, dann läuft alles von selbst weiter."))
                     .font(.system(size: 10))
                     .foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
@@ -122,7 +127,7 @@ struct MenuView: View {
                             .font(.system(size: 10))
                             .foregroundStyle(transfer.status == "failed" ? Color.red : Color.secondary)
                         if transfer.status == "failed" {
-                            Button("Retry") { state.retry(transfer.id) }
+                            Button(tr("Retry", "Erneut")) { state.retry(transfer.id) }
                                 .controlSize(.mini)
                         }
                     }
@@ -133,7 +138,7 @@ struct MenuView: View {
                 }
             }
             if state.transfers.contains(where: { $0.status == "done" || $0.status == "failed" }) {
-                Button("Clear finished") { state.clearFinished() }
+                Button(tr("Clear finished", "Erledigte entfernen")) { state.clearFinished() }
                     .controlSize(.mini)
             }
         }
@@ -141,11 +146,12 @@ struct MenuView: View {
 
     private func detail(_ transfer: TransferSnapshot) -> String {
         switch transfer.status {
-        case "waiting": return "waiting"
-        case "offered": return "offered"
+        case "waiting": return tr("waiting", "wartet")
+        case "offered": return tr("offered", "angeboten")
         case "sending": return "\(Int(transfer.fraction * 100)) %"
         case "done":    return Format.size(transfer.size)
-        case "failed":  return transfer.reason.isEmpty ? "failed" : transfer.reason
+        case "failed":  return transfer.reason.isEmpty
+                               ? tr("failed", "fehlgeschlagen") : transfer.reason
         default:        return transfer.status
         }
     }
@@ -155,10 +161,10 @@ struct MenuView: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Button("History") { showWindow("history") }
-                Button("Settings") { showWindow("settings") }
+                Button(tr("History", "Verlauf")) { showWindow("history") }
+                Button(tr("Settings", "Einstellungen")) { showWindow("settings") }
                 Spacer()
-                Button(showLog ? "Hide log" : "Log") {
+                Button(showLog ? tr("Hide log", "Protokoll aus") : tr("Log", "Protokoll")) {
                     showLog.toggle()
                 }
             }

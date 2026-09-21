@@ -30,13 +30,15 @@ final class AppState: ObservableObject {
     var connected: Bool { !receiverNames.isEmpty }
 
     var statusText: String {
-        if startError != nil { return "Not running" }
+        if startError != nil { return tr("Not running", "Läuft nicht") }
         if receiverNames.isEmpty {
-            return running ? "Waiting for the Windows tab" : "Starting the server"
+            return running
+                ? tr("Waiting for the Windows tab", "Wartet auf den Windows-Tab")
+                : tr("Starting the server", "Server startet")
         }
         return receiverNames.count == 1
-            ? "Connected to \(receiverNames[0])"
-            : "\(receiverNames.count) receivers connected"
+            ? tr("Connected to ", "Verbunden mit ") + receiverNames[0]
+            : "\(receiverNames.count) " + tr("receivers connected", "Empfänger verbunden")
     }
 
     var addressByName: String {
@@ -179,7 +181,7 @@ final class AppState: ObservableObject {
     private func packAndSend(_ sources: [URL]) {
         let description = sources.count == 1
             ? sources[0].lastPathComponent
-            : "\(sources.count) items"
+            : "\(sources.count) " + tr("items", "Objekte")
         packing = true
         note(Format.time() + " Packing \(description) into a ZIP archive …")
 
@@ -191,7 +193,9 @@ final class AppState: ObservableObject {
                 guard let archive = result else {
                     self.note(Format.time() + " Packing failed: " + description)
                     if self.settings.notifyOnFailure {
-                        Notifier.show(title: "WinDrop", body: "Packing failed: " + description)
+                        Notifier.show(title: "WinDrop",
+                                      body: tr("Packing failed: ", "Packen fehlgeschlagen: ")
+                                          + description)
                     }
                     return
                 }
@@ -203,10 +207,10 @@ final class AppState: ObservableObject {
     private func recordFinish(name: String, size: Int, success: Bool, reason: String) {
         history.add(name: name, size: size, success: success, reason: reason)
         if success, settings.notifyOnSuccess {
-            Notifier.show(title: "Delivered", body: name)
+            Notifier.show(title: tr("Delivered", "Zugestellt"), body: name)
         }
         if !success, settings.notifyOnFailure {
-            Notifier.show(title: "Not sent",
+            Notifier.show(title: tr("Not sent", "Nicht gesendet"),
                           body: reason.isEmpty ? name : name + " – " + reason)
         }
     }
